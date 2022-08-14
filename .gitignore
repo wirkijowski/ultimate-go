@@ -1,2 +1,8 @@
-utlimate-go
+# vscode
 .vscode*
+
+# Mac
+.DS_Store
+
+#Binaries
+app/services/sales-api/sales-api
