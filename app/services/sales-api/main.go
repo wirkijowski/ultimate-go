@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"expvar"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -47,7 +49,7 @@ func run(log *zap.SugaredLogger) error {
 	if _, err := maxprocs.Set(); err != nil {
 		return fmt.Errorf("maxprocs: %w", err)
 	}
-
+	log.Infow("startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 	// ==================================
 	// Configuration
 	//
@@ -55,12 +57,12 @@ func run(log *zap.SugaredLogger) error {
 	cfg := struct {
 		conf.Version
 		Web struct {
-			ApiHost          string        `conf:"default:0.0.0.0:3000"`
-			DebugHost        string        `conf:"default:0.0.0.0:4000"`
-			ReadTimeout      time.Duration `conf:"default:5s"`
-			WriteTimeout     time.Duration `conf:"default:10s"`
-			IdleTiemout      time.Duration `conf:"default:120s"`
-			ShoutdownTimeout time.Duration `conf:"default:20s"`
+			ApiHost         string        `conf:"default:0.0.0.0:3000"`
+			DebugHost       string        `conf:"default:0.0.0.0:4000"`
+			ReadTimeout     time.Duration `conf:"default:5s"`
+			WriteTimeout    time.Duration `conf:"default:10s"`
+			IdleTiemout     time.Duration `conf:"default:120s"`
+			ShutdownTimeout time.Duration `conf:"default:20s"`
 		}
 		/*
 			Auth struct {
@@ -129,7 +131,47 @@ func run(log *zap.SugaredLogger) error {
 	// ==================================
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	<-shutdown
+
+	api := http.Server{
+		Addr:        cfg.Web.ApiHost,
+		Handler:     nil,
+		ReadTimeout: cfg.Web.ReadTimeout,
+		IdleTimeout: cfg.Web.IdleTiemout,
+		ErrorLog:    zap.NewStdLog(log.Desugar()),
+	}
+
+	// Make a channel to listen for errors coming from the listener. Use a
+	// buffered channgel so the goroutine can exit if we don collect this error.
+	serverErrors := make(chan error, 1)
+
+	// Start the service listening for api requests.
+	go func() {
+		log.Infow("startup", "status", "api router started", "host", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	// =============================================================================
+	// Shutdown
+
+	// Blockin main and waiting for shutdown.
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+
+	case sig := <-shutdown:
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+
+		// Give outstanding requests a deadline for completion.
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		// Asking listener to shutdown and shed load.
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+	}
 
 	return nil
 }
