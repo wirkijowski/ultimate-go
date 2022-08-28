@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf"
+	//"github.com/ardanlabs/service/app/services/sales-api/handlers"
+	"github.com/wirkijowski/ultimate-go/app/services/sales-api/handlers"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/wirkijowski/ultimate-go/app/services/handlers"
 )
 
 /*
