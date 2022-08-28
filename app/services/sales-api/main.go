@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/wirkijowski/utlimate-go/app/services/handlers"
+	"github.com/wirkijowski/ultimate-go/app/services/handlers"
 )
 
 /*
