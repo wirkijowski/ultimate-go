@@ -1,12 +1,22 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/ardanlabs/conf"
+	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+/*
+Need to figure out timeouts for https service
+*/
 
 var build = "develop"
 
@@ -27,6 +37,76 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
+	// ==================================
+	// GOMAXPROCS
+	// set the correct number of threads
+
+	if _, err := maxprocs.Set(); err != nil {
+		return fmt.Errorf("maxprocs: %w", err)
+	}
+
+	// ==================================
+	// Configuration
+	//
+
+	cfg := struct {
+		conf.Version
+		Web struct {
+			ApiHost          string        `conf:"default:0.0.0.0:3000"`
+			DebugHost        string        `conf:"default:0.0.0.0:4000"`
+			ReadTimeout      time.Duration `conf:"default:5s"`
+			WriteTimeout     time.Duration `conf:"default:10s"`
+			IdleTiemout      time.Duration `conf:"default:120s"`
+			ShoutdownTimeout time.Duration `conf:"default:20s"`
+		}
+		/*
+			Auth struct {
+				KeysFolder	string `conf:"default:zarf/keys/"`
+				ActiveKID 	string `conf:"default:54bb2456-71e1-41a6-af3e-7da4a0e1e2c1"`
+			}
+			DB struct {
+				User 			string 	`conf:"default:postgres"`
+				Password 		string 	`conf:"default:postgres,mask"`
+				Host 			string 	`conf:"default:localhost"`
+				Name 			string 	`conf:"default:postgres"`
+				MaxIdleConns 	int		`conf:"default:0"`
+
+			}*/
+	}{
+		Version: conf.Version{
+			SVN:  build,
+			Desc: "copyright information here",
+		},
+	}
+
+	const prefix = "SALES"
+
+	help, err := conf.ParseOSArgs(prefix, &cfg)
+	if err != nil {
+		if errors.Is(err, conf.ErrHelpWanted) {
+			fmt.Println(help)
+			return nil
+		}
+		return fmt.Errorf("parsing config: %w", err)
+	}
+
+	// ==================================
+	// App starting
+
+	log.Infow("starting service", "version", build)
+	defer log.Infow("shutdown complete")
+
+	out, err := conf.String(&cfg)
+	if err != nil {
+		return fmt.Errorf("generating config for output: %w", err)
+	}
+	log.Infow("startup", "config", out)
+
+	// ==================================
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+	<-shutdown
+
 	return nil
 }
 

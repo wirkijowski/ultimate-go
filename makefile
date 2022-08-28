@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 run:
-	go run app/services/sales-api/main.go
+	go run app/services/sales-api/main.go | go run app/tooling/logfmt/main.go
 
 
 VERSION := 1.0
@@ -47,7 +47,7 @@ kind-status-sales:
 	kubectl get pods -o wide --watch
 
 kind-logs:
-	kubectl logs -l app=sales-api --all-containers=true -f --tail=100
+	kubectl logs -l app=sales-api --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
 
 kind-restart:
 	kubectl rollout restart deployment sales-api-pod
