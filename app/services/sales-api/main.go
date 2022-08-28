@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf"
-	//"github.com/ardanlabs/service/app/services/sales-api/handlers"
 	"github.com/wirkijowski/ultimate-go/app/services/sales-api/handlers"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
@@ -105,6 +105,8 @@ func run(log *zap.SugaredLogger) error {
 	}
 	log.Infow("startup", "config", out)
 
+	expvar.NewString("build").Set(build)
+
 	// ==================================
 	// Start Debug Service
 
@@ -113,7 +115,7 @@ func run(log *zap.SugaredLogger) error {
 	// The Debug function returns a mux to listen and serve on for all the debug
 	// realted endpoints. This include the standard library endpoins.
 
-	debugMux := handlers.DebugMux(build, log)
+	debugMux := handlers.DebugStandardLibraryMux()
 
 	// Start the service listening for debug requests.
 	// Not concerned with shutting this down with loda shedding.
