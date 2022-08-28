@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,8 @@ import (
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/wirkijowski/utlimate-go/app/services/handlers"
 )
 
 /*
@@ -101,6 +104,25 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Infow("startup", "config", out)
+
+	// ==================================
+	// Start Debug Service
+
+	log.Infow("startup", "status", "debug router started", "host", cfg.Web.DebugHost)
+
+	// The Debug function returns a mux to listen and serve on for all the debug
+	// realted endpoints. This include the standard library endpoins.
+
+	debugMux := handlers.DebugMux(build, log)
+
+	// Start the service listening for debug requests.
+	// Not concerned with shutting this down with loda shedding.
+
+	go func() {
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debugMux); err != nil {
+			log.Errorw("shutdown", "status", "debug router closed", "host", cfg.Web.DebugHost, "ERROR", err)
+		}
+	}()
 
 	// ==================================
 	shutdown := make(chan os.Signal, 1)
