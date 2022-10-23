@@ -27,7 +27,7 @@ var build = "develop"
 
 func main() {
 
-	log, err := initLogger("SALES-API")
+	log, err := initLogger("SALES-API") //
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -132,9 +132,15 @@ func run(log *zap.SugaredLogger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// construct the mux for the api calls
+	apiMux := handlers.APIMux(handlers.APIMuxConfig{
+		Shutdown: shutdown,
+		Log:      log,
+	})
+
 	api := http.Server{
 		Addr:        cfg.Web.ApiHost,
-		Handler:     nil,
+		Handler:     apiMux,
 		ReadTimeout: cfg.Web.ReadTimeout,
 		IdleTimeout: cfg.Web.IdleTiemout,
 		ErrorLog:    zap.NewStdLog(log.Desugar()),
