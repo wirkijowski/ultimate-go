@@ -2,11 +2,9 @@ package testgrp
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"net/http"
 
-	"github.com/wirkijowski/ultimate-go/business/sys/validate"
 	"github.com/wirkijowski/ultimate-go/foundation/web"
 	"go.uber.org/zap"
 )
@@ -20,8 +18,9 @@ type Handlers struct {
 func (h Handlers) Test(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	if n := rand.Intn(100); n%2 == 0 {
 		// return errors.New("untrusted error")
-		return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
+		//return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
 		// return web.NewShutdownError("restart service")
+		panic("testing panic")
 	}
 
 	status := struct {
