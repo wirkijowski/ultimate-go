@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	"github.com/wirkijowski/ultimate-go/business/sys/metrics"
 	"github.com/wirkijowski/ultimate-go/foundation/web"
 )
 
@@ -27,6 +28,9 @@ func Panics() web.Middleware {
 					trace := debug.Stack()
 					// Stack trace will be provided.
 					err = fmt.Errorf("PANIC [%v] TRACE[%s]", rec, string(trace))
+
+					// Updates the metrics stored in the context.
+					metrics.AddPanics(ctx)
 				}
 			}()
 
