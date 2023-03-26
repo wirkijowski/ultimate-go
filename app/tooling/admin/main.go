@@ -6,15 +6,97 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func main() {
-	err := genKey()
+	err := genToken()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func genToken() error {
+
+	name := "zarf/keys/private.pem"
+	file, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// limit PEM file size to 1 megabyte. This should be reasonable for
+	// almost any PEM file and prevents shenanigans like linking the file
+	// to /dev/random or something like that.
+	privatePEM, err := io.ReadAll(io.LimitReader(file, 1024*1024))
+	if err != nil {
+		return fmt.Errorf("reading auth private key: %w", err)
+	}
+
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
+	if err != nil {
+		return fmt.Errorf("parsing auth private key: %w", err)
+	}
+
+	// =========================================================================
+
+	// Generating a token requires defining a set of claims. In this applications
+	// case, we only care about defining the subject and the user in question and
+	// the roles they have on the database. This token will expire in a year.
+
+	claims := struct {
+		jwt.StandardClaims
+		Roles []string
+	}{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    "service project",
+			Subject:   "123 ",
+			ExpiresAt: time.Now().Add(8760 * time.Hour).Unix(),
+			IssuedAt:  time.Now().UTC().Unix(),
+		},
+		Roles: []string{"ADMIN"},
+	}
+
+	method := jwt.GetSigningMethod("RS256")
+	token := jwt.NewWithClaims(method, claims)
+	token.Header["kid"] = "dupa-"
+
+	str, err := token.SignedString(privateKey)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("====== TOKEN BEGIN ======")
+	fmt.Println(str)
+	fmt.Println("======= TOKEN END =======")
+	fmt.Println()
+
+	// =========================================================================
+
+	// Marshal the public key from the private key to PKIX
+	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshaling public key %w", err)
+	}
+
+	// Construct a PEM block for the public key.
+	publicBlock := pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: asn1Bytes,
+	}
+
+	// Write the public key to stdout.
+	if err := pem.Encode(os.Stdout, &publicBlock); err != nil {
+		return fmt.Errorf("encoding to public file: %w", err)
+	}
+
+	fmt.Println("privale and public key file generated")
+	return nil
 }
 
 // genKey creates an x509 private/public key for auth tokens.
@@ -27,7 +109,7 @@ func genKey() error {
 	}
 
 	// Create a file for the private key information in PEM form.
-	privateFile, err := os.Create("private.pem")
+	privateFile, err := os.Create("zarf/keys/private.pem")
 	if err != nil {
 		return fmt.Errorf("creating private file: %w", err)
 	}
@@ -51,7 +133,7 @@ func genKey() error {
 	}
 
 	// Create a file for the bublic key information in PEM form.
-	publicFile, err := os.Create("public.pem")
+	publicFile, err := os.Create("zarf/keys/public.pem")
 	if err != nil {
 		return fmt.Errorf("creating public file: %w", err)
 	}

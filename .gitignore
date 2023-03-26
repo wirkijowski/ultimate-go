@@ -6,3 +6,6 @@
 
 #Binaries
 app/services/sales-api/sales-api
+
+#private/public pem files
+*.pem
