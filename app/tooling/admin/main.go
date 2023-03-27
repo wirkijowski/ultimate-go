@@ -111,7 +111,6 @@ func genToken() error {
 		if !ok {
 			return nil, errors.New("missing key id (kid) in token header")
 		}
-
 		kidID, ok := kid.(string)
 		if !ok {
 			return nil, errors.New("user token key id (kid) must be string")
