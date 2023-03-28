@@ -24,7 +24,7 @@ func main() {
 
 func genToken() error {
 
-	name := "zarf/keys/private.pem"
+	name := "zarf/keys/54bb2456-71e1-41a6-af3e-7da4a0e1e2c1.pem"
 	file, err := os.Open(name)
 	if err != nil {
 		return err
@@ -60,12 +60,12 @@ func genToken() error {
 			ExpiresAt: time.Now().Add(8760 * time.Hour).Unix(),
 			IssuedAt:  time.Now().UTC().Unix(),
 		},
-		Roles: []string{"ADMIN"},
+		Roles: []string{"USER"},
 	}
 
 	method := jwt.GetSigningMethod("RS256")
 	token := jwt.NewWithClaims(method, claims)
-	token.Header["kid"] = "dupa-"
+	token.Header["kid"] = "54bb2456-71e1-41a6-af3e-7da4a0e1e2c1"
 
 	tokenStr, err := token.SignedString(privateKey)
 	if err != nil {
@@ -146,7 +146,7 @@ func genKey() error {
 	}
 
 	// Create a file for the private key information in PEM form.
-	privateFile, err := os.Create("zarf/keys/private.pem")
+	privateFile, err := os.Create("zarf/keys/54bb2456-71e1-41a6-af3e-7da4a0e1e2c1.pem")
 	if err != nil {
 		return fmt.Errorf("creating private file: %w", err)
 	}

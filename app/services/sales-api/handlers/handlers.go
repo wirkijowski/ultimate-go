@@ -10,6 +10,7 @@ import (
 
 	"github.com/wirkijowski/ultimate-go/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/wirkijowski/ultimate-go/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/wirkijowski/ultimate-go/business/sys/auth"
 	"github.com/wirkijowski/ultimate-go/business/web/mid"
 	"github.com/wirkijowski/ultimate-go/foundation/web"
 	"go.uber.org/zap"
@@ -56,6 +57,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	Auth     *auth.Auth
 }
 
 func APIMux(cfg APIMuxConfig) *web.App {
@@ -83,4 +85,6 @@ func v1(app *web.App, cfg APIMuxConfig) {
 		Log: cfg.Log,
 	}
 	app.Handle(http.MethodGet, version, "/test", tgh.Test)
+	app.Handle(http.MethodGet, version, "/testauth", tgh.Test, mid.Authenticate(cfg.Auth), mid.Authorize("ADMIN"))
+
 }

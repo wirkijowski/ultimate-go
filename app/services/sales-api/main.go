@@ -14,6 +14,8 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/wirkijowski/ultimate-go/app/services/sales-api/handlers"
+	"github.com/wirkijowski/ultimate-go/business/sys/auth"
+	"github.com/wirkijowski/ultimate-go/foundation/keystore"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -64,11 +66,11 @@ func run(log *zap.SugaredLogger) error {
 			IdleTiemout     time.Duration `conf:"default:120s"`
 			ShutdownTimeout time.Duration `conf:"default:20s"`
 		}
+		Auth struct {
+			KeysFolder string `conf:"default:zarf/keys/"`
+			ActiveKID  string `conf:"default:54bb2456-71e1-41a6-af3e-7da4a0e1e2c1"`
+		}
 		/*
-			Auth struct {
-				KeysFolder	string `conf:"default:zarf/keys/"`
-				ActiveKID 	string `conf:"default:54bb2456-71e1-41a6-af3e-7da4a0e1e2c1"`
-			}
 			DB struct {
 				User 			string 	`conf:"default:postgres"`
 				Password 		string 	`conf:"default:postgres,mask"`
@@ -109,6 +111,23 @@ func run(log *zap.SugaredLogger) error {
 
 	expvar.NewString("build").Set(build)
 
+	// =========================================================================
+	// Initialize authentication support
+
+	log.Infow("startup", "status", "initializing authentication support")
+
+	// Construct a key store based on the key files stored in
+	// the specified directory.
+	ks, err := keystore.NewFS(os.DirFS(cfg.Auth.KeysFolder))
+	if err != nil {
+		return fmt.Errorf("reading keys: %w", err)
+	}
+
+	auth, err := auth.New(cfg.Auth.ActiveKID, ks)
+	if err != nil {
+		return fmt.Errorf("constructing auth: %w", err)
+	}
+
 	// ==================================
 	// Start Debug Service
 
@@ -136,6 +155,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		Auth:     auth,
 	})
 
 	api := http.Server{

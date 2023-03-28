@@ -39,7 +39,7 @@ type ctxKey int
 const key ctxKey = 1
 
 // SteClaims stores the claims in the context.
-func SteClaims(ctx context.Context, claims Claims) context.Context {
+func SetClaims(ctx context.Context, claims Claims) context.Context {
 	return context.WithValue(ctx, key, claims)
 }
 
