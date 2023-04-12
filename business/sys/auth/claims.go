@@ -38,7 +38,7 @@ type ctxKey int
 // key is used to store retrieve a Claims value form a context.Context.
 const key ctxKey = 1
 
-// SteClaims stores the claims in the context.
+// SetClaims stores the claims in the context.
 func SetClaims(ctx context.Context, claims Claims) context.Context {
 	return context.WithValue(ctx, key, claims)
 }

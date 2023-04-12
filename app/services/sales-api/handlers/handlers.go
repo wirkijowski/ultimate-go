@@ -53,7 +53,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 	return mux
 }
 
-// APIMuxCOnfig contains all the mandatory systems required by handlers
+// APIMuxConfig contains all the mandatory systems required by handlers
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger

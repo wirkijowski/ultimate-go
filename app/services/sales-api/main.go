@@ -59,7 +59,7 @@ func run(log *zap.SugaredLogger) error {
 	cfg := struct {
 		conf.Version
 		Web struct {
-			ApiHost         string        `conf:"default:0.0.0.0:3000"`
+			APIHost         string        `conf:"default:0.0.0.0:3000"`
 			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeout    time.Duration `conf:"default:10s"`
@@ -159,7 +159,7 @@ func run(log *zap.SugaredLogger) error {
 	})
 
 	api := http.Server{
-		Addr:        cfg.Web.ApiHost,
+		Addr:        cfg.Web.APIHost,
 		Handler:     apiMux,
 		ReadTimeout: cfg.Web.ReadTimeout,
 		IdleTimeout: cfg.Web.IdleTiemout,

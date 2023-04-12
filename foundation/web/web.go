@@ -26,6 +26,7 @@ type App struct {
 }
 
 // Factory function
+
 // NewApp creates an App value that handle a set of routes for the application.
 func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
 	return &App{
