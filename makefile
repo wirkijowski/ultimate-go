@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 
+# dblab --host 0.0.0.0 --user postgres --db postgres --pass postgres --ssl disable --port 5432 --driver postgres
+
 # ==============================================================================
 # Testing running system
 
