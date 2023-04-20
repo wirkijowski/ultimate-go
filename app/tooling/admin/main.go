@@ -58,7 +58,7 @@ func migrate() error {
 	cfg := database.Config{
 		User:         "postgres",
 		Password:     "postgres",
-		Host:         "0.0.0.0",
+		Host:         "localhost",
 		Name:         "postgres",
 		MaxIdleConns: 0,
 		MaxOpenConns: 0,
