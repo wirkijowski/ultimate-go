@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/ardanlabs/conf v1.5.0
+	github.com/ardanlabs/darwin v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
