@@ -15,6 +15,7 @@ require (
 	github.com/lib/pq v1.10.8
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/zap v1.22.0
+	golang.org/x/crypto v0.7.0
 )
 
 require (
@@ -26,7 +27,6 @@ require (
 	github.com/leodido/go-urn v1.2.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 )
