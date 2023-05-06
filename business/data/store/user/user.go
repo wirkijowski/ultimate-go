@@ -52,7 +52,7 @@ func (s Store) Create(ctx context.Context, nu NewUser, now time.Time) (User, err
 
 	const q = `
 	INSERT INTO users
-		(user_id, name, email, passsword_hash, roles, date_created, date_updated)
+		(user_id, name, email, password_hash, roles, date_created, date_updated)
 	VALUES
 		(:user_id, :name, :email, :password_hash, :roles, :date_created, :date_updated)`
 
@@ -211,7 +211,7 @@ func (s Store) QueryByID(ctx context.Context, claims auth.Claims, userID string)
 	return usr, nil
 }
 
-// QueryByID gets the specified user from the database by email.
+// QueryByEmail gets the specified user from the database by email.
 func (s Store) QueryByEmail(ctx context.Context, claims auth.Claims, email string) (User, error) {
 
 	// Add Email Validate fucntion in validate

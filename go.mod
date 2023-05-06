@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.5.8
 	github.com/pkg/errors v0.9.1 // indirect
 )
 

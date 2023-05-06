@@ -1,4 +1,4 @@
-// Packege logger provides a convenience function to constructing a logger
+// Package logger provides a convenience function to constructing a logger
 // for use. This is required not just for application but for testing.
 package logger
 
