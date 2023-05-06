@@ -43,7 +43,7 @@ func StartContainer(t *testing.T, image string, port string, args ...string) *Co
 		t.Fatalf("could not decode json: %v", err)
 	}
 
-	ip, randPort := extractIPPort(t, doc, port)
+	ip, randPort := extractIPPort(doc, port)
 
 	c := Container{
 		ID:   id,
