@@ -4,6 +4,8 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +14,10 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/wirkijowski/ultimate-go/business/data/schema"
+	"github.com/wirkijowski/ultimate-go/business/sys/auth"
 	"github.com/wirkijowski/ultimate-go/business/sys/database"
 	"github.com/wirkijowski/ultimate-go/foundation/docker"
+	"github.com/wirkijowski/ultimate-go/foundation/keystore"
 	"github.com/wirkijowski/ultimate-go/foundation/logger"
 	"go.uber.org/zap"
 )
@@ -94,6 +98,44 @@ func NewUnit(t *testing.T, dbc DBContainer) (*zap.SugaredLogger, *sqlx.DB, func(
 	}
 
 	return log, db, teardown
+}
+
+// Test owns state for running and shutting down tests.
+type Test struct {
+	DB       *sqlx.DB
+	Log      *zap.SugaredLogger
+	Auth     *auth.Auth
+	Teardown func()
+
+	t *testing.T
+}
+
+// NewIntegration creates a database, seeds it, constructs an authenticator.
+func NewIntegration(t *testing.T, dbc DBContainer) *Test {
+	log, db, teardown := NewUnit(t, dbc)
+
+	// Create RSA keys to enable authentication in our service.
+	keyID := "4754d86b-7a6d-4df5-9c65-224741361492"
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Build an authenticator using this private key and id for the key store.
+	auth, err := auth.New(keyID, keystore.NewMap(map[string]*rsa.PrivateKey{keyID: privateKey}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	test := Test{
+		DB:       db,
+		Log:      log,
+		Auth:     auth,
+		t:        t,
+		Teardown: teardown,
+	}
+
+	return &test
 }
 
 // StringPointer is a helper to get a *string from a string. It is in the tests
