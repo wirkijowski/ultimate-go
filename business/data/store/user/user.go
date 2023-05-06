@@ -149,7 +149,7 @@ func (s Store) Delete(ctx context.Context, claims auth.Claims, userID string) er
 func (s Store) Query(ctx context.Context, pageNumber int, rowsPerPage int) ([]User, error) {
 	data := struct {
 		Offset      int `db:"offset"`
-		RowsPerPage int `db:"rows_per_page`
+		RowsPerPage int `db:"rows_per_page"`
 	}{
 		Offset:      (pageNumber - 1) * rowsPerPage,
 		RowsPerPage: rowsPerPage,
