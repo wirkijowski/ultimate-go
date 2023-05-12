@@ -77,6 +77,9 @@ kind-status-sales:
 
 kind-logs:
 	kubectl logs -l app=sales-api --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
+kind-logs-sales:
+	kubectl logs -l app=sales-api --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go -service=SALES-API
+
 
 kind-restart:
 	kubectl rollout restart deployment sales-api-pod

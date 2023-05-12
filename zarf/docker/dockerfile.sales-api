@@ -1,4 +1,4 @@
-FROM golang:1.18 as build_sales-api
+FROM golang:1.19 as build_sales-api
 
 ENV CGO_ENABLED 0
 ARG BUILD_REF
