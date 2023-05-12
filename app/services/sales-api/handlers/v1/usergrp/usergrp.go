@@ -43,7 +43,7 @@ func (h Handlers) Query(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return web.Respond(ctx, w, users, http.StatusOK)
 }
 
-// QueryById returns user by ID
+// QueryByID returns user by ID
 func (h Handlers) QueryByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	claims, err := auth.GetClaims(ctx)
 	if err != nil {
