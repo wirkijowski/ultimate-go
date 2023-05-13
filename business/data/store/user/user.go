@@ -40,7 +40,7 @@ func (s Store) Create(ctx context.Context, nu NewUser, now time.Time) (User, err
 		return User{}, fmt.Errorf("generating password hash: %w", err)
 	}
 
-	usr := User{
+	dbUsr := dbUser{
 		ID:           validate.GenerateID(),
 		Name:         nu.Name,
 		Email:        nu.Email,
@@ -56,11 +56,11 @@ func (s Store) Create(ctx context.Context, nu NewUser, now time.Time) (User, err
 	VALUES
 		(:user_id, :name, :email, :password_hash, :roles, :date_created, :date_updated)`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, dbUsr); err != nil {
 		return User{}, fmt.Errorf("inserting user: %w", err)
 	}
 
-	return usr, nil
+	return toUser(dbUsr), nil
 }
 
 // Update replaces a user document in the database.
@@ -108,7 +108,7 @@ func (s Store) Update(ctx context.Context, claims auth.Claims, userID string, uu
 	WHERE
 		user_id = :user_id`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, toDBUser(usr)); err != nil {
 		return fmt.Errorf("updating userID[%s]: %w", userID, err)
 	}
 
@@ -164,15 +164,15 @@ func (s Store) Query(ctx context.Context, pageNumber int, rowsPerPage int) ([]Us
 		user_id
 	OFFSET :offset ROWS FETCH NEXT :rows_per_page ROWS ONLY`
 
-	var users []User
-	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &users); err != nil {
+	var dbUsrs []dbUser
+	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &dbUsrs); err != nil {
 		if err == database.ErrNotFound {
 			return nil, database.ErrNotFound
 		}
 		return nil, fmt.Errorf("selecting users: %w", err)
 	}
 
-	return users, nil
+	return toUserSlice(dbUsrs), nil
 }
 
 // QueryByID gets the specified user from the database by ID.
@@ -200,15 +200,15 @@ func (s Store) QueryByID(ctx context.Context, claims auth.Claims, userID string)
 	WHERE
 		user_id = :user_id`
 
-	var usr User
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+	var dbUsr dbUser
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &dbUsr); err != nil {
 		if err == database.ErrNotFound {
 			return User{}, database.ErrNotFound
 		}
 		return User{}, fmt.Errorf("selecting userID[%q]: %w", userID, err)
 	}
 
-	return usr, nil
+	return toUser(dbUsr), nil
 }
 
 // QueryByEmail gets the specified user from the database by email.
@@ -233,15 +233,15 @@ func (s Store) QueryByEmail(ctx context.Context, claims auth.Claims, email strin
 	WHERE
 		email = :email`
 
-	var usr User
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+	var dbUsr dbUser
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &dbUsr); err != nil {
 		if err == database.ErrNotFound {
 			return User{}, database.ErrNotFound
 		}
 		return User{}, fmt.Errorf("selecting email[%q]: %w", email, err)
 	}
 
-	return usr, nil
+	return toUser(dbUsr), nil
 }
 
 // Authenticate finds a user by their email and verifies their password. On
@@ -262,8 +262,8 @@ func (s Store) Authenticate(ctx context.Context, now time.Time, email, password 
 	WHERE
 		email = :email`
 
-	var usr User
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+	var dbUsr dbUser
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &dbUsr); err != nil {
 		if err == database.ErrNotFound {
 			return auth.Claims{}, database.ErrNotFound
 		}
@@ -272,7 +272,7 @@ func (s Store) Authenticate(ctx context.Context, now time.Time, email, password 
 
 	// Compare the provided password with the saved hash. Use the bcrypt
 	// comparison function so it is cryptographically secure.
-	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(dbUsr.PasswordHash, []byte(password)); err != nil {
 		return auth.Claims{}, database.ErrAuthenticationFailure
 	}
 
@@ -281,11 +281,11 @@ func (s Store) Authenticate(ctx context.Context, now time.Time, email, password 
 	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    "service project",
-			Subject:   usr.ID,
+			Subject:   toUser(dbUsr).ID,
 			ExpiresAt: time.Now().Add(time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
-		Roles: usr.Roles,
+		Roles: toUser(dbUsr).Roles,
 	}
 
 	return claims, nil
