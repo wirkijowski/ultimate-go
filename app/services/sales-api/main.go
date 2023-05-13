@@ -46,6 +46,9 @@ func main() {
 	// Perform the startup and shutdown sequencee
 	if err := run(log); err != nil {
 		log.Errorw("startup", "ERROR", err)
+		// os.Exit will terminate immdiately, so defer form l 44 won't be executed
+		// thus it needs to be called here
+		log.Sync()
 		os.Exit(1)
 	}
 }
